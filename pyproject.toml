@@ -1,0 +1,24 @@
+# pyproject.toml
+
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "janus-csv-converter"
+version = "1.0.0"
+description = "A CSV file converter to import in HomeBank"
+readme = "README.md"
+authors = [{ name = "José Juan Pedreño", email = "jjpedreno@gmail.com" }]
+license = { file = "LICENSE" }
+dynamic = ["dependencies"]
+requires-python = ">=3.10"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[project.urls]
+Homepage = "https://github.com/jjpedreno/janus-csv-converter"
+
+[project.scripts]
+janus = "janus_csv_converter.__main__:main"

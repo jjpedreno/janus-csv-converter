@@ -111,7 +111,7 @@ def post_process(transaction):  # TODO externalize all hardcoced strings
         transaction[7] += "paypal"  # Tagging paypal
 
 
-def amex_visa_parser(csvfile):
+def amex_parser(csvfile):
     """
     American Express CSV format (Germany)
     """
@@ -203,10 +203,6 @@ def dkb_visa_parser(csvfile):
         # Info and memo
         info = ''
         memo = row['Beschreibung']
-
-        # Check if internal transfer
-        if "Auszahlung" in memo or "Einzahlung" in memo:
-            tags += " InternalTransfer"
 
         # Amount
         amount = row['Betrag']
@@ -314,8 +310,6 @@ def amazon_visa_parser(csvfile):
     8 Betrag in Euro - Amount in Euros
     9 Amazon Punkte - Amazon points
     10 Prime Punkte - Prime points
-    :param csvfile:
-    :return:
     """
 
     # Ignore header without useful data
@@ -586,7 +580,7 @@ def load_parse_csv_file(path, banktype):
             parsed_data = spendee_parser(csvfile)
             bank = 'SPENDEE'
         elif args.amex:
-            parsed_data = amex_visa_parser(csvfile)
+            parsed_data = amex_parser(csvfile)
             bank = 'AMEX'
         else:
             raise ValueError("No valid CSV bank format was selected")
@@ -607,11 +601,11 @@ def argument_parser():
     group.add_argument('--dkbvisa', action="store_true", help="convert a DKB VISA (Germany) CSV file")
     group.add_argument('--amazonvisa', action="store_true", help="convert a Amazon VISA (Germany) CSV file")
     group.add_argument('--paypal', action="store_true",
-                       help="convert from PayPal CSV file (Completed Payments with Default fields (merchant view)")
+                       help="convert from PayPal CSV file (Completed Payments) with Default fields (merchant view)")
     group.add_argument('--santanderPL', action="store_true", help="convert from Santander Bank Polska CSV file")
     group.add_argument('--spendee', action="store_true", help="convert from Spendee app CSV file")
     group.add_argument('--amex', action="store_true",
-                       help="convert from American Express Visa (Germany) CSV file (exported with all values/details)")
+                       help="convert from American Express (Germany) CSV file (exported with all values/details)")
     return parser.parse_args()
 
 

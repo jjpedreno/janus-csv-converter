@@ -89,7 +89,7 @@ class SPENDEE(csv.Dialect):
 
 
 class AMEX(csv.Dialect):
-    delimiter = ';'
+    delimiter = ','
     quotechar = '\"'
     doublequote = True  # I am so tired of this...
     skipinitialspace = False

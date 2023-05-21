@@ -48,19 +48,19 @@ differently, depending on their original bank format, with some subjectivity on 
 
 ### **DKB Cash**
 
-| Field name       | HomeBank equivalent                 |
-|------------------|-------------------------------------|
-| buchungstag      |                                     |
-| wertstellung     | **Date** (format %Y-%m-%d)          |
-| buchungstext     | **Payment type** (see table below)  |
-| beguenstigter    | **Payee** + "kontonummer" as suffix |
-| verwendungszweck | **Memo**                            |
-| kontonummer      | **Payee**                           |
-| blz              |                                     |
-| betrag           | **Amount**                          |
-| glaeubigerID     |                                     |
-| mandatsreferenz  |                                     |
-| kundenreferenz   |                                     |
+| Field name       | HomeBank equivalent                                      |
+|------------------|----------------------------------------------------------|
+| buchungstag      |                                                          |
+| wertstellung     | **Date** (format %Y-%m-%d)                               |
+| buchungstext     | **Payment type** (see table below)                       |
+| beguenstigter    | **Payee** + "kontonummer" as as prefix in field **Memo** |
+| verwendungszweck | **Memo**                                                 |
+| kontonummer      | **Payee**                                                |
+| blz              |                                                          |
+| betrag           | **Amount**                                               |
+| glaeubigerID     |                                                          |
+| mandatsreferenz  |                                                          |
+| kundenreferenz   |                                                          |
 
 The field *buchungstext* is a text field that must be mapped to the payment type:
 
@@ -73,6 +73,12 @@ The field *buchungstext* is a text field that must be mapped to the payment type
 | Dauerauftrag              | 7 - Standing order     |
 | Abschluss                 | 9 - Deposit            |
 | Kartenzahlung/-abrechnung | 6 - Debit card         |
+| Kartenzahlung             | 6 - Debit card         |
+| Gutschr. ueberweisung     | 4 - Bank transfer      |
+| Online-zahlung            | 8 - Electronic payment |
+| Bargeldabhebung           | 3 - Cash               |
+| Online-ueberweisung       | 4 - Bank transfer      |
+| Überweisung               | 4 - Bank transfer      |
 
 ### DKB Visa
 Prepaid credit cards were discountinued by DKB (in favor of Visa Debit cards) on Q1/Q2 of 2022.

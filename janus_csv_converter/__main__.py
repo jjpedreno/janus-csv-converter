@@ -268,21 +268,27 @@ def dkb_parser(csvfile):
 
         # Decode payment
         payment_list = {
-            "FOLGELASTSCHRIFT": 8,  # Electronic payment
-            "Gutschrift": 9,
-            "Lastschrift": 8,  # Electronic payment
-            "Umbuchung": 4,  # Transfer between acounts
-            "Dauerauftrag": 7,  # Standing order
-            "Abschluss": 9,  # Deposit
-            "Kartenzahlung/-abrechnung": 6,
+            "folgelastschrift": 8,  # OLD, possible deprecated Electronic payment
+            "gutschrift": 4,  # Bank transfer
+            "lastschrift": 8,  # Electronic payment
+            "umbuchung": 4,  # Transfer between acounts
+            "dauerauftrag": 7,  # Standing order
+            "abschluss": 10,  # Deposit
+            "kartenzahlung/-abrechnung": 6,  # Debit card
+            "kartenzahlung": 6,  # Debit Card
+            "gutschr. ueberweisung": 4,  # Transfer, probably between DKB accounts
+            "online-zahlung": 8,  # Electronic payment
+            "bargeldabhebung": 3,  # Cash, that means Geldoautomat
+            "online-ueberweisung": 4,  # Online transfer
+            "überweisung": 4,  # Bank transfer
         }
-        payment = payment_list.get(row['buchungstext'], 0)
+        payment = payment_list.get(str(row['buchungstext']).casefold(), 0)
 
         # Payee
-        payee = row["beguenstigter"] + " - " + row['kontonummer']
+        payee = ''
 
         # Memo
-        memo = row['verwendungszweck']
+        memo = f"{row['beguenstigter']}- {row['verwendungszweck']} -{row['kontonummer']}"
 
         # Amount
         amount = row['betrag']
@@ -549,7 +555,9 @@ def n26_parser(csvfile):
 
 def load_parse_csv_file(path, banktype):
     # Trying to detect file encoding!
-    file_bytes = Path(path).read_bytes()
+    file_path = Path(path)
+    logging.debug(f"Path input file = {file_path}")
+    file_bytes = file_path.read_bytes()
     detection = cchardet.detect(file_bytes)
     encoding = detection["encoding"]
     confidence = detection["confidence"]
@@ -557,7 +565,7 @@ def load_parse_csv_file(path, banktype):
     if confidence < 0.75:
         logging.warning("Confidence on the encoding type is too low, output file may contain errors!")
 
-    with open(path, encoding=encoding) as csvfile:
+    with open(file_path, encoding=encoding) as csvfile:
         if args.n26:  # N26
             parsed_data = n26_parser(csvfile)
             bank = 'N26'

@@ -48,21 +48,18 @@ differently, depending on their original bank format, with some subjectivity on 
 
 ### **DKB Cash**
 
-| Field name       | HomeBank equivalent                                      |
-|------------------|----------------------------------------------------------|
-| buchungstag      |                                                          |
-| wertstellung     | **Date** (format %Y-%m-%d)                               |
-| buchungstext     | **Payment type** (see table below)                       |
-| beguenstigter    | **Payee** + "kontonummer" as as prefix in field **Memo** |
-| verwendungszweck | **Memo**                                                 |
-| kontonummer      | **Payee**                                                |
-| blz              |                                                          |
-| betrag           | **Amount**                                               |
-| glaeubigerID     |                                                          |
-| mandatsreferenz  |                                                          |
-| kundenreferenz   |                                                          |
+| HomeBank field   | DKB column                                 |
+|------------------|--------------------------------------------|
+| **Date**         | Werstellung (format %Y-%m-%d)              |
+| **Payment type** | (see table below)                          |
+| **Info**         |                                            |
+| **Payee**        |                                            |
+| **Memo**         | Beguenstigter-Verwendungszweck-Kontonummer |
+| **Amount**       | Betrag                                     |
+| **Category**     |                                            |
+| **Tags**         |                                            |
 
-The field *buchungstext* is a text field that must be mapped to the payment type:
+The field *buchungstext* is a text field that is mapped to the payment type:
 
 | buchungstext              | HomeBank Payment       |
 |---------------------------|------------------------|
@@ -80,7 +77,7 @@ The field *buchungstext* is a text field that must be mapped to the payment type
 | Online-ueberweisung       | 4 - Bank transfer      |
 | Überweisung               | 4 - Bank transfer      |
 
-### DKB Visa
+### DKB Visa - OLD, no longer maintained 
 Prepaid credit cards were discountinued by DKB (in favor of Visa Debit cards) on Q1/Q2 of 2022.
 
 | Field name   | HomeBank equivalent        |
@@ -92,21 +89,19 @@ Prepaid credit cards were discountinued by DKB (in favor of Visa Debit cards) on
 | Betrag       | **Amount**                 |
 | Ubetrag      |                            |
 
-### N26
+### N26 - OLD, no longer maintained
 Field headers are assumed to be in Spanish. Although the number of fields and their meaning apply to all languages.
 
-
-| Field name                   | HomeBank equivalent          |
-|------------------------------|------------------------------|
-| Fecha                        | **Date** (format %Y-%m-%d)   |
-| Beneficiario                 | **Payee**                    |
-| Tipo de transacción          | **Payment type** (see below) |
-| Referencia de pago           | **Memo**                     |
-| Categoría                    |                              |
-| Cantidad (EUR)               | **Amount**                   |
-| Cantidad (Divisa extranjera) |                              |
-| Tipo de divisa extranjera    |                              |
-| Tipo de cambio               |                              |
+| HomeBank field   | N26 column                      |
+|------------------|---------------------------------|
+| **Date**         | Fecha (format %Y-%m-%d)         |
+| **Payment type** | (see table below)               |
+| **Info**         |                                 |
+| **Payee**        |                                 |
+| **Memo**         | Beneficiario-Referencia de pago |
+| **Amount**       | Cantidad (EUR)                  |
+| **Category**     |                                 |
+| **Tags**         |                                 |
 
 If payment is made un foreign currency (not EUR), the **Info** field will contain the original amount and the 
 exchange rate.
@@ -120,19 +115,16 @@ exchange rate.
 
 ### Amazon Visa (Deutschland)
 
-| Field name                                                     | HomeBank equivalent       |
-|----------------------------------------------------------------|---------------------------|
-| Kreditkartennummer                                             |                           |
-| Transaktionsdatum                                              | **Date** (format %Y-%m-%d |
-| Buchungsdatum                                                  |                           |
-| Händler (Name, Stadt & Land) - Merchant (name, city & country) | **Payee**                 |
-| Umsatzkategorie                                                | **Memo**                  |
-| Betrag in Fremdwährung                                         |                           |
-| Einheit Fremdwährung                                           |                           |
-| Umrechnungskurs                                                |                           |
-| Betrag in Euro                                                 | **Amount**                |
-| Amazon Punkte                                                  |                           |
-| Prime Punkte                                                   |                           |
+| HomeBank field   | Amazon Visa column                  |
+|------------------|-------------------------------------|
+| **Date**         | Transaktionsdatum (format %Y-%m-%d) |
+| **Payment type** | _1_ (type Credit Card)              |
+| **Info**         |                                     |
+| **Payee**        |                                     |
+| **Memo**         | Händler                             |
+| **Amount**       | Betrag in Euro                      |
+| **Category**     |                                     |
+| **Tags**         |                                     |
 
 If payment is made un foreign currency (not EUR), the **Info** field will contain the original amount and the 
 exchange rate.
@@ -145,18 +137,27 @@ TODO: Needs documenting
 
 [Spendee](https://www.spendee.com/) is an iOS/Android app for expenditure (e.g., cash) tracking.
 
-| Field name      | HomeBank equivalent       |
-|-----------------|---------------------------|
-| Date            | **Date** (format %Y-%m-%d |
-| Wallet          |                           |
-| Category name   |                           |
-| Amount          | **Amount**                |
-| Currency        |                           |
-| Note            | **Memo**                  |
-| Labels          |                           |
-| Author          |                           |
+| Field name      | HomeBank equivalent        |
+|-----------------|----------------------------|
+| Date            | **Date** (format %Y-%m-%d) |
+| Wallet          |                            |
+| Category name   |                            |
+| Amount          | **Amount**                 |
+| Currency        |                            |
+| Note            | **Memo**                   |
+| Labels          |                            |
+| Author          |                            |
 
 
 ### American Express (Deutschland)
 
-TODO: Needs documenting
+| HomeBank field   | Amazon Visa column                         |
+|------------------|--------------------------------------------|
+| **Date**         | Datum (format %Y-%m-%d)                    |
+| **Payment type** | _1_ (type Credit Card)                     |
+| **Info**         | Karteninhaber                              |
+| **Payee**        |                                            |
+| **Memo**         | Beschreibung                               |
+| **Amount**       | Betrag-Weitere Details-Addresse, PLZ, Land |
+| **Category**     |                                            |
+| **Tags**         |                                            |

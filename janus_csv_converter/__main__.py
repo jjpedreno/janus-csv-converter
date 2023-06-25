@@ -117,6 +117,7 @@ def amex_parser(csvfile):
     """
     transactions = csv.DictReader(csvfile, dialect=AMEX)
     out = []
+    row: dict
     for row in transactions:
         # This is so wrong in son many levels.
         # WHAT THE FUCK IS WRONG WITH AMEX?
@@ -128,38 +129,26 @@ def amex_parser(csvfile):
         # Payment type, that one is easy...
         payment = 1
 
-        # Memo with bullshit extra spaces
-        memo = row['Beschreibung']
-        memo = re.sub(r"\s{2,}", " ", memo)  # Get rid of all extra spaces that were put for some reason: AMEX GET YOUR SHIT TOGETHER
-        memo += row['Weitere Details']
+        # Memo
+        # Constructing as "Memo-Adress-Statd,Land
+        address = re.sub(r"\n", ", ", row['Adresse'])  # Removing those pesky line breaks
+        memo = f"{row['Beschreibung']}-{row['Weitere Details']}-{row['Adresse']}, {row['PLZ']}, {row['Land']}"
 
-        # Payee
-        payee = row.get('Erscheint auf Ihrer Abrechnung als', " ")
-        # Default value, sometimes None!
-        if payee is None:
-            payee = " "
-        payee = re.sub(r"\s{2,}", " ", payee)
+        # Postprocessing of the Memo field
+        # AMEX GET YOUR SHIT TOGETHER
+        memo = re.sub(r"\s{2,}", " ", memo)  # Get rid of all extra spaces
+        memo = re.sub(r"\n", ", ", memo)  # Remove extra line breaks (LF characters)
+        memo = re.sub(r"--", '-', memo)  # Remove double dash in case of empty additional details
 
-        # Removing that useless pice of shit of LF from the address
-        address = re.sub(r"\n", ", ", row['Adresse'])
-        payee += " - " + address
+        # Payeel leaving it empty as always
+        payee = ''
 
-        stadt = row.get('Stadt', ' ')
-        if stadt is not None:
-            payee += ", " + stadt
-
-        plz = row.get('PLZ', ' ')
-        if plz is not None:
-            payee += " " + plz
-
-        land = row.get('Land', ' ')
-        if land is not None:
-            payee += ", " + land
-
+        # Amount as float, and make negative
         amount = float(row['Betrag'].replace(',', '.'))
         amount *= -1
 
-        info = category = tags = ''
+        info = row['Karteninhaber']
+        category = tags = ''
 
         out_row = [date, payment, info, payee, memo, amount, category, tags]
         post_process(out_row)
@@ -237,16 +226,16 @@ def dkb_parser(csvfile):
     """
 
     dkb_fields = ["buchungstag",  # 0 Date
-                       "wertstellung",  # 1 Efective date?
-                       "buchungstext",  # 2 Memo? Payment?
-                       "beguenstigter",  # 3 Payee
-                       "verwendungszweck",  # 4 Memo
-                       "kontonummer",  # 5 Account number
-                       "blz",  # 6
-                       "betrag",  # 7 Amount
-                       "glaeubigerID",  # 8 transaction ID?
-                       "mandatsreferenz",  # 9 transaction ID?
-                       "kundenreferenz"]  # 10 transaction ID?
+                   "wertstellung",  # 1 Efective date?
+                   "buchungstext",  # 2 Memo? Payment?
+                   "beguenstigter",  # 3 Payee
+                   "verwendungszweck",  # 4 Memo
+                   "kontonummer",  # 5 Account number
+                   "blz",  # 6
+                   "betrag",  # 7 Amount
+                   "glaeubigerID",  # 8 transaction ID?
+                   "mandatsreferenz",  # 9 transaction ID?
+                   "kundenreferenz"]  # 10 transaction ID?
 
     # Ignore header without useful data
     lines = csvfile.readlines()
@@ -288,7 +277,7 @@ def dkb_parser(csvfile):
         payee = ''
 
         # Memo
-        memo = f"{row['beguenstigter']}- {row['verwendungszweck']} -{row['kontonummer']}"
+        memo = f"{row['beguenstigter']}-{row['verwendungszweck']}-{row['kontonummer']}"
 
         # Amount
         amount = row['betrag']
@@ -337,9 +326,9 @@ def amazon_visa_parser(csvfile):
         date = datetime.strptime(row[1], "%d.%m.%Y").strftime('%Y-%m-%d')
 
         # Memo
-        memo = row[4]
+        memo = f"{row[3]}-{row[4]}"
         # Payee
-        payee = row[3]
+        payee = ''
         # Payment
         payment = 1  # Credit card, fixed for this account type
         # Amount
@@ -521,11 +510,7 @@ def n26_parser(csvfile):
     for row in transactions:
         date = row['Fecha']
         payee = row['Beneficiario']
-        if row['Referencia de pago'] == "":
-            memo = payee
-        else:
-            memo = row['Referencia de pago']
-
+        memo = f"{row['Beneficiario']}-{row['Referencia de pago']}"
         # Decode payment
         payment_list = {
             "Pago con MasterCard": 6,  # Debit card
@@ -534,10 +519,6 @@ def n26_parser(csvfile):
             "Ingreso": 9,  # Depósito
         }
         payment = payment_list.get(row['Tipo de transacción'], 0)
-        if payment == 4:  # Transferencia
-            payee = row['Beneficiario']
-            memo = row['Referencia de pago']
-
         amount = row['Cantidad (EUR)']
 
         category = ''

@@ -136,9 +136,7 @@ def amex_parser(csvfile):
 
         # Postprocessing of the Memo field
         # AMEX GET YOUR SHIT TOGETHER
-        memo = re.sub(r"\s{2,}", " ", memo)  # Get rid of all extra spaces
-        memo = re.sub(r"\n", ", ", memo)  # Remove extra line breaks (LF characters)
-        memo = re.sub(r"--", '-', memo)  # Remove double dash in case of empty additional details
+        memo = postprocess_details(memo)
 
         # Payeel leaving it empty as always
         payee = ''
@@ -154,6 +152,13 @@ def amex_parser(csvfile):
         post_process(out_row)
         out.append(out_row)
     return out
+
+
+def postprocess_details(field):
+    field = re.sub(r"\s{2,}", " ", field)  # Get rid of all extra spaces
+    field = re.sub(r"\n", ", ", field)  # Remove extra line breaks (LF characters)
+    field = re.sub(r"--", '-', field)  # Remove double dash in case of empty additional details
+    return field
 
 
 def dkb_visa_parser(csvfile):
@@ -191,7 +196,7 @@ def dkb_visa_parser(csvfile):
 
         # Info and memo
         info = ''
-        memo = row['Beschreibung']
+        memo = postprocess_details(row['Beschreibung'])
 
         # Amount
         amount = row['Betrag']
@@ -253,7 +258,7 @@ def dkb_parser(csvfile):
     for row in transactions:
 
         # Date
-        date = datetime.strptime(row['wertstellung'], "%d.%m.%Y").strftime('%Y-%m-%d')
+        date = datetime.strptime(row['buchungstag'], "%d.%m.%Y").strftime('%Y-%m-%d')
 
         # Decode payment
         payment_list = {
@@ -277,7 +282,7 @@ def dkb_parser(csvfile):
         payee = ''
 
         # Memo
-        memo = f"{row['beguenstigter']}-{row['verwendungszweck']}-{row['kontonummer']}"
+        memo = postprocess_details(f"{row['beguenstigter']}-{row['verwendungszweck']}-{row['kontonummer']}")
 
         # Amount
         amount = row['betrag']

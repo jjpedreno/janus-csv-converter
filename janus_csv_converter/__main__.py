@@ -89,7 +89,7 @@ class SPENDEE(csv.Dialect):
 
 
 class AMEX(csv.Dialect):
-    delimiter = ','
+    delimiter = ';'
     quotechar = '\"'
     doublequote = True  # I am so tired of this...
     skipinitialspace = False
@@ -147,7 +147,7 @@ def amex_parser(csvfile):
         amount = float(row['Betrag'].replace(',', '.'))
         amount *= -1
 
-        info = row['Karteninhaber']
+        info = row.get('Karteninhaber', '')
         category = tags = ''
 
         out_row = [date, payment, info, payee, memo, amount, category, tags]

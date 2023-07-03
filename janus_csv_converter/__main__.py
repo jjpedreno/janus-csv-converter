@@ -232,7 +232,7 @@ def dkb_parser(csvfile):
 
     dkb_fields = ["buchungstag",  # 0 Date
                    "wertstellung",  # 1 Efective date?
-                   "buchungstext",  # 2 Memo? Payment?
+                   "buchungstext",  # 2 Payment?
                    "beguenstigter",  # 3 Payee
                    "verwendungszweck",  # 4 Memo
                    "kontonummer",  # 5 Account number
@@ -258,7 +258,15 @@ def dkb_parser(csvfile):
     for row in transactions:
 
         # Date
-        date = datetime.strptime(row['buchungstag'], "%d.%m.%Y").strftime('%Y-%m-%d')
+        # Try to extract the date from the "verwendungszweck" field, otherwise use the value from "buchungstag"
+        date_pattern = r"^(\d{4}-\d{2}-\d{2})\W+"
+        result = re.search(date_pattern, row['verwendungszweck'])
+        if result is not None:
+            date = result.group(1)
+            # Then remove the redundant data from "verwendungszweck"
+            row['verwendungszweck'] = re.sub(date_pattern, '',row['verwendungszweck'])
+        else:
+            date = datetime.strptime(row['buchungstag'], "%d.%m.%Y").strftime('%Y-%m-%d')
 
         # Decode payment
         payment_list = {

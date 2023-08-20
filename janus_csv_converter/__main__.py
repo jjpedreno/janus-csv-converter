@@ -71,7 +71,7 @@ class PAYPAL(csv.Dialect):
 
 
 class SANTANDERPL(csv.Dialect):
-    delimiter = ';'
+    delimiter = ','
     quotechar = '\"'
     doublequote = True
     skipinitialspace = False
@@ -436,10 +436,10 @@ def santander_pl_parser(csvfile):
     for row in transactions:
         # Date
         date = datetime.strptime(row[1], "%d-%m-%Y").strftime('%Y-%m-%d')
-        # Memo
-        memo = row[2] + " - " + row[4]
+        # Payee - Payee account number - Memo
+        memo = f"{row[3]} - {row[4]} - {row[2]}"
         # Payee
-        payee = row[3]
+        payee = ''
         # Amount
         amount = float(row[5].replace(',', '.'))
         # Payment type
@@ -522,7 +522,7 @@ def n26_parser(csvfile):
 
     for row in transactions:
         date = row['Fecha']
-        payee = row['Beneficiario']
+        payee = ''
         memo = f"{row['Beneficiario']}-{row['Referencia de pago']}"
         # Decode payment
         payment_list = {

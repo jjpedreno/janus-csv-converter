@@ -5,7 +5,6 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
-
 import cchardet
 import logging
 
@@ -391,7 +390,7 @@ def paypal_parser(csvfile):
         memo += " - " + row['Transaction ID']
 
         # Amount
-        amount = float(row['Net'].replace(',', '.'))
+        amount = float(row['Net'].replace('.', '').replace(',', '.')) # TODO change to a more elegant approach, maybe with "locale"
         if row['Currency'] != 'EUR':
             memo += " " + row['Currency'] + "=" + str(amount)
 

@@ -88,7 +88,7 @@ class SPENDEE(csv.Dialect):
 
 
 class AMEX(csv.Dialect):
-    delimiter = ';'
+    #delimiter = ',' Delimiter is now autodetected
     quotechar = '\"'
     doublequote = True  # I am so tired of this...
     skipinitialspace = False
@@ -114,7 +114,19 @@ def amex_parser(csvfile):
     """
     American Express CSV format (Germany)
     """
-    transactions = csv.DictReader(csvfile, dialect=AMEX)
+    TEST_COMMA = "Datum,"
+    TEST_SEMICOLON = "Datum;"
+    first_line = csvfile.readline()
+    csvfile.seek(0) #Reseting the pointer, I need that first line to get the column names
+    if TEST_COMMA in first_line:
+        logging.debug("Amex file detected with delimiter COMMA")
+        transactions = csv.DictReader(csvfile, dialect=AMEX, delimiter=',')
+    elif TEST_SEMICOLON in first_line:
+        logging.debug("Amex file detected with delimiter SEMICOLON")
+        transactions = csv.DictReader(csvfile, dialect=AMEX, delimiter=';')
+    else:
+        logging.error("No delimiter detected in Amex file, exiting!")
+        exit(1)
     out = []
     row: dict
     for row in transactions:

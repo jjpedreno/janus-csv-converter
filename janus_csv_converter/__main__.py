@@ -114,21 +114,15 @@ def amex_parser(csvfile):
     """
     American Express CSV format (Germany)
     """
-    TEST_COMMA = "Datum,"
-    TEST_SEMICOLON = "Datum;"
-    first_line = csvfile.readline()
-    csvfile.seek(0) #Reseting the pointer, I need that first line to get the column names
-    if TEST_COMMA in first_line:
-        logging.debug("Amex file detected with delimiter COMMA")
-        transactions = csv.DictReader(csvfile, dialect=AMEX, delimiter=',')
-    elif TEST_SEMICOLON in first_line:
-        logging.debug("Amex file detected with delimiter SEMICOLON")
-        transactions = csv.DictReader(csvfile, dialect=AMEX, delimiter=';')
-    else:
-        logging.error("No delimiter detected in Amex file, exiting!")
-        exit(1)
+    # First, try to detect the delimiter
+    dialect = csv.Sniffer().sniff(csvfile.read(1024))
+    csvfile.seek(0) # Resetting the pointer so we don't lose the headers
+    logging.debug(f"Amex delimiter detected = {dialect.delimiter}")
+    # Using the original dialect to properly manage those line breaks inside fields, however the new delimiter is set
+    transactions = csv.DictReader(csvfile, dialect=AMEX, delimiter=dialect.delimiter)
+
     out = []
-    row: dict
+    row: dict # Sometimes the IDE doesn't properly detect the object type
     for row in transactions:
         # This is so wrong in son many levels.
         # WHAT THE FUCK IS WRONG WITH AMEX?

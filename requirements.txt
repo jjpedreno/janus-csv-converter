@@ -1,1 +1,2 @@
-cchardet
+cchardet>=2.1.7
+loguru>=0.7.2

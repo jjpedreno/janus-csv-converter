@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 import cchardet
-import logging
+from loguru import logger
 
 
 # HomeBank CSV column format:
@@ -88,7 +88,7 @@ class SPENDEE(csv.Dialect):
 
 
 class AMEX(csv.Dialect):
-    #delimiter = ',' Delimiter is now autodetected
+    # delimiter = ',' Delimiter is now autodetected
     quotechar = '\"'
     doublequote = True  # I am so tired of this...
     skipinitialspace = False
@@ -116,13 +116,13 @@ def amex_parser(csvfile):
     """
     # First, try to detect the delimiter
     dialect = csv.Sniffer().sniff(csvfile.read(1024))
-    csvfile.seek(0) # Resetting the pointer so we don't lose the headers
-    logging.debug(f"Amex delimiter detected = {dialect.delimiter}")
+    csvfile.seek(0)  # Resetting the pointer so we don't lose the headers
+    logger.debug(f"Amex delimiter detected = {dialect.delimiter}")
     # Using the original dialect to properly manage those line breaks inside fields, however the new delimiter is set
     transactions = csv.DictReader(csvfile, dialect=AMEX, delimiter=dialect.delimiter)
 
     out = []
-    row: dict # Sometimes the IDE doesn't properly detect the object type
+    row: dict  # Sometimes the IDE doesn't properly detect the object type
     for row in transactions:
         # This is so wrong in son many levels.
         # WHAT THE FUCK IS WRONG WITH AMEX?
@@ -141,7 +141,7 @@ def amex_parser(csvfile):
 
         # Postprocessing of the Memo field
         # AMEX GET YOUR SHIT TOGETHER
-        memo = postprocess_details(memo)
+        memo = trimm_memo(memo)
 
         # Payeel leaving it empty as always
         payee = ''
@@ -159,7 +159,7 @@ def amex_parser(csvfile):
     return out
 
 
-def postprocess_details(field):
+def trimm_memo(field):
     field = re.sub(r"\s{2,}", " ", field)  # Get rid of all extra spaces
     field = re.sub(r"\n", ", ", field)  # Remove extra line breaks (LF characters)
     field = re.sub(r"--", '-', field)  # Remove double dash in case of empty additional details
@@ -168,11 +168,11 @@ def postprocess_details(field):
 
 def dkb_visa_parser(csvfile):
     dkb_visa_fields = ["saldo",  # 0 Umsatz abgerechnet und nicht im Saldo enthalten
-                            "wertstellung",  # 1 Efective date?
-                            "Belegdatum",  # Day of the operation?
-                            "Beschreibung",  # 3 Memo
-                            "Betrag",  # 4 Betrag amount
-                            "Ubetrag"]  # 5 Non euro amount
+                       "wertstellung",  # 1 Efective date?
+                       "Belegdatum",  # Day of the operation?
+                       "Beschreibung",  # 3 Memo
+                       "Betrag",  # 4 Betrag amount
+                       "Ubetrag"]  # 5 Non euro amount
 
     # Ignore header without useful data
     lines = csvfile.readlines()
@@ -201,7 +201,7 @@ def dkb_visa_parser(csvfile):
 
         # Info and memo
         info = ''
-        memo = postprocess_details(row['Beschreibung'])
+        memo = trimm_memo(row['Beschreibung'])
 
         # Amount
         amount = row['Betrag']
@@ -235,17 +235,17 @@ def dkb_parser(csvfile):
     "kundenreferenz"]
     """
 
-    dkb_fields = ["buchungstag",  # 0 Date
-                   "wertstellung",  # 1 Efective date?
-                   "buchungstext",  # 2 Payment?
-                   "beguenstigter",  # 3 Payee
-                   "verwendungszweck",  # 4 Memo
-                   "kontonummer",  # 5 Account number
-                   "blz",  # 6
-                   "betrag",  # 7 Amount
-                   "glaeubigerID",  # 8 transaction ID?
-                   "mandatsreferenz",  # 9 transaction ID?
-                   "kundenreferenz"]  # 10 transaction ID?
+    dkb_fields = ["Buchungsdatum",  # 0 Date
+                  "Wertstellung",  # 1 Efective date?
+                  "Status",  # 2 Status?
+                  "Zahlungspflichtige*r",  # 3 Payee
+                  "Zahlungsempfänger*in",  # 4 Issuer
+                  "Verwendungszweck",  # 5 Memo
+                  "Umsatztyp",  # 6
+                  "Betrag",  # 7 Amount
+                  "Gläubiger-ID",  # 8 transaction ID?
+                  "Mandatsreferenz",  # 9 transaction ID?
+                  "Kundenreferenz"]  # 10 Customer ID?
 
     # Ignore header without useful data
     lines = csvfile.readlines()
@@ -264,41 +264,33 @@ def dkb_parser(csvfile):
 
         # Date
         # Try to extract the date from the "verwendungszweck" field, otherwise use the value from "buchungstag"
-        date_pattern = r"^(\d{4}-\d{2}-\d{2})\W+"
-        result = re.search(date_pattern, row['verwendungszweck'])
+        date_pattern = r"^(\d{4}-\d{2}-\d{2})"
+        result = re.search(date_pattern, row['Verwendungszweck'])
         if result is not None:
             date = result.group(1)
             # Then remove the redundant data from "verwendungszweck"
-            row['verwendungszweck'] = re.sub(date_pattern, '',row['verwendungszweck'])
+            row['Verwendungszweck'] = re.sub(date_pattern, '', row['Verwendungszweck'])
         else:
-            date = datetime.strptime(row['buchungstag'], "%d.%m.%Y").strftime('%Y-%m-%d')
-
-        # Decode payment
-        payment_list = {
-            "folgelastschrift": 8,  # OLD, possible deprecated Electronic payment
-            "gutschrift": 4,  # Bank transfer
-            "lastschrift": 8,  # Electronic payment
-            "umbuchung": 4,  # Transfer between acounts
-            "dauerauftrag": 7,  # Standing order
-            "abschluss": 10,  # Deposit
-            "kartenzahlung/-abrechnung": 6,  # Debit card
-            "kartenzahlung": 6,  # Debit Card
-            "gutschr. ueberweisung": 4,  # Transfer, probably between DKB accounts
-            "online-zahlung": 8,  # Electronic payment
-            "bargeldabhebung": 3,  # Cash, that means Geldoautomat
-            "online-ueberweisung": 4,  # Online transfer
-            "überweisung": 4,  # Bank transfer
-        }
-        payment = payment_list.get(str(row['buchungstext']).casefold(), 0)
+            date = datetime.strptime(row['Buchungsdatum'], "%d.%m.%y").strftime('%Y-%m-%d')
 
         # Payee
         payee = ''
 
-        # Memo
-        memo = postprocess_details(f"{row['beguenstigter']}-{row['verwendungszweck']}-{row['kontonummer']}")
+        # Memo and payment type, based on Verwendungszweck and Umsatztyp fields
+        if "Ausgang" in row['Umsatztyp']:
+            if "VISA Debit" in row['Verwendungszweck']:
+                payment = 6  # Debit card
+                memo = trimm_memo(f"{row['Zahlungsempfänger*in']}-{row['Verwendungszweck']}")
+            else:
+                payment = 4
+                memo = trimm_memo(
+                    f"{row['Zahlungsempfänger*in']}-{row['Verwendungszweck']}")  # TODO not elegant, refactor at some point
+        else: # Incoming transaction
+            payment = 4
+            memo = trimm_memo(f"{row['Zahlungspflichtige*r']}-{row['Verwendungszweck']}")
 
         # Amount
-        amount = row['betrag']
+        amount = row['Betrag']
 
         # Info, category and tags
         info = category = tags = ''
@@ -396,7 +388,8 @@ def paypal_parser(csvfile):
         memo += " - " + row['Transaction ID']
 
         # Amount
-        amount = float(row['Net'].replace('.', '').replace(',', '.')) # TODO change to a more elegant approach, maybe with "locale"
+        amount = float(row['Net'].replace('.', '').replace(',',
+                                                           '.'))  # TODO change to a more elegant approach, maybe with "locale"
         if row['Currency'] != 'EUR':
             memo += " " + row['Currency'] + "=" + str(amount)
 
@@ -555,14 +548,14 @@ def n26_parser(csvfile):
 def load_parse_csv_file(path, banktype):
     # Trying to detect file encoding!
     file_path = Path(path)
-    logging.debug(f"Path input file = {file_path}")
+    logger.debug(f"Path input file = {file_path}")
     file_bytes = file_path.read_bytes()
     detection = cchardet.detect(file_bytes)
     encoding = detection["encoding"]
     confidence = detection["confidence"]
-    logging.debug(f"File encoding= {encoding} - witch confidence= {confidence}")
+    logger.debug(f"File encoding= {encoding} - witch confidence= {confidence}")
     if confidence < 0.75:
-        logging.warning("Confidence on the encoding type is too low, output file may contain errors!")
+        logger.warning("Confidence on the encoding type is too low, output file may contain errors!")
 
     with open(file_path, encoding=encoding) as csvfile:
         if args.n26:  # N26
@@ -621,13 +614,10 @@ def main():
     args = argument_parser()
     input_path = args.filename
 
-    if args.debug:
-        log_level = logging.DEBUG
-    else:
-        log_level = logging.INFO
-    log_format = '[%(asctime)s] %(levelname)s %(lineno)d - %(funcName)s(): %(message)s'
-    logging.basicConfig(stream=sys.stdout, format=log_format, level=log_level)
-    logging.debug("Starting program...")
+    log_level = "DEBUG" if args.debug else "INFO"
+    logger.remove(0)
+    logger.add(sys.stderr, level=log_level)
+    logger.debug("Starting program...")
 
     # Parsing and categorizing the data
     parsed_data, bank = load_parse_csv_file(input_path, args)

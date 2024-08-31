@@ -242,6 +242,7 @@ def dkb_parser(csvfile):
                   "Zahlungsempfänger*in",  # 4 Issuer
                   "Verwendungszweck",  # 5 Memo
                   "Umsatztyp",  # 6
+                  "IBAN", # Ignored
                   "Betrag",  # 7 Amount
                   "Gläubiger-ID",  # 8 transaction ID?
                   "Mandatsreferenz",  # 9 transaction ID?

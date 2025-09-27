@@ -41,6 +41,10 @@ class AMAZONVISA(csv.Dialect):
     lineterminator = '\r\n'
     quoting = csv.QUOTE_MINIMAL
 
+class CASHEW(csv.Dialect):
+    delimiter = ','
+    lineterminator = '\r\n'
+    quoting = csv.QUOTE_NONE
 
 class DKB(csv.Dialect):
     delimiter = ';'
@@ -545,6 +549,56 @@ def n26_parser(csvfile):
         out.append(out_row)
     return out
 
+def cashew_parser(csvfile):
+    """
+    0 Account name
+    1 Amount
+    2 Currency Type
+    3 Title
+    4 Note
+    5 Date
+    6 Income
+    7 Type
+    8 Category Name
+    9 Subcategory Name
+    10 Color
+    11 Icon
+    12 Emoji
+    13 Budget
+    14 Objective
+    :param csvfile:
+    :return:
+    """
+    transactions = csv.DictReader(csvfile, dialect=CASHEW)
+    out = []
+
+    for row in transactions:
+        date_split = row['date'].split(' ')
+        if len(date_split) != 2:
+            logger.error(f"Date format is incorrect: {row['date']}")
+
+        # Date, in case it changes the format: datetime.strptime(date_split, 'XXXXX').strftime('%Y-%m-%d')
+        date = date_split[0]
+
+        # Payment type
+        payment = 3
+
+        # Amount
+        amount = row['amount']
+
+        # Memo
+        memo = row['title']
+
+        #Info
+        # Adding the account, currency and category for reference
+        info = f"{row['account']}-{row['currency']}-{row['category name']}"
+
+        # Payee, category and tags
+        payee = tags = category = ''
+
+        out_row = [date, payment, info, payee, memo, amount, category, tags]
+        out.append(out_row)
+    return out
 
 def load_parse_csv_file(path, banktype):
     # Trying to detect file encoding!
@@ -583,6 +637,9 @@ def load_parse_csv_file(path, banktype):
         elif args.amex:
             parsed_data = amex_parser(csvfile)
             bank = 'AMEX'
+        elif args.cashew:
+            parsed_data = cashew_parser(csvfile)
+            bank = 'CASHEW'
         else:
             raise ValueError("No valid CSV bank format was selected")
         return parsed_data, bank
@@ -607,6 +664,7 @@ def argument_parser():
     group.add_argument('--spendee', action="store_true", help="convert from Spendee app CSV file")
     group.add_argument('--amex', action="store_true",
                        help="convert from American Express (Germany) CSV file (exported with all values/details)")
+    group.add_argument('--cashew', action="store_true",help='convert a Casher CSV file (Android and iOS app)')
     return parser.parse_args()
 
 

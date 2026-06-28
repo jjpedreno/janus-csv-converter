@@ -5,7 +5,7 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
-import cchardet
+import charset_normalizer as chardet
 from loguru import logger
 
 
@@ -605,7 +605,7 @@ def load_parse_csv_file(path, banktype):
     file_path = Path(path)
     logger.debug(f"Path input file = {file_path}")
     file_bytes = file_path.read_bytes()
-    detection = cchardet.detect(file_bytes)
+    detection = chardet.detect(file_bytes)
     encoding = detection["encoding"]
     confidence = detection["confidence"]
     logger.debug(f"File encoding= {encoding} - witch confidence= {confidence}")
